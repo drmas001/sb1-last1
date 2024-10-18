@@ -17,28 +17,23 @@ const Login: React.FC<LoginProps> = ({ setUser }) => {
     setError('');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: `${employeeCode}@example.com`, // Assuming employee codes are used as emails
-        password: employeeCode, // In a real app, you'd use a proper password field
-      });
+      // التحقق من وجود employee code في جدول profiles
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('employee_code', employeeCode)
+        .single();
 
       if (error) throw error;
 
-      if (data.user) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError) throw profileError;
-
-        setUser({ 
-          id: data.user.id, 
-          employeeCode, 
-          isAdmin: profileData?.is_admin || false 
+      if (data) {
+        // تسجيل الدخول بنجاح وتحديد ما إذا كان المستخدم مسؤولاً أم لا
+        setUser({
+          id: data.user_id,
+          employeeCode: data.employee_code,
+          isAdmin: data.is_admin,
         });
-        navigate('/');
+        navigate('/'); // التوجيه إلى الصفحة الرئيسية
       }
     } catch (error) {
       setError('Failed to log in. Please check your employee code.');

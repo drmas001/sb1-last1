@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserPlus, UserMinus, Users } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 
 interface Employee {
   id: string;
@@ -15,11 +16,27 @@ const AdminDashboard: React.FC = () => {
   ]);
 
   const [newEmployee, setNewEmployee] = useState({ name: '', code: '', isAdmin: false });
+  const [error, setError] = useState('');
 
-  const handleAddEmployee = (e: React.FormEvent) => {
+  const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
-    setEmployees([...employees, { ...newEmployee, id: Date.now().toString() }]);
-    setNewEmployee({ name: '', code: '', isAdmin: false });
+    setError('');
+
+    try {
+      // إضافة الموظف إلى قاعدة بيانات Supabase
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([{ employee_name: newEmployee.name, employee_code: newEmployee.code, is_admin: newEmployee.isAdmin }]);
+
+      if (error) throw error;
+
+      // إضافة الموظف إلى الحالة المحلية
+      setEmployees([...employees, { ...newEmployee, id: Date.now().toString() }]);
+      setNewEmployee({ name: '', code: '', isAdmin: false });
+    } catch (error) {
+      setError('Failed to add employee. Please try again.');
+      console.error('Error:', error);
+    }
   };
 
   const handleDeleteEmployee = (id: string) => {
@@ -79,6 +96,9 @@ const AdminDashboard: React.FC = () => {
                 Admin Access
               </label>
             </div>
+            {error && (
+              <div className="text-red-500 text-sm">{error}</div>
+            )}
             <button
               type="submit"
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -135,3 +155,4 @@ const AdminDashboard: React.FC = () => {
 };
 
 export default AdminDashboard;
+

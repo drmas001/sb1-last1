@@ -6,7 +6,7 @@ import { supabase } from '../supabaseClient';
 interface PatientData {
   mrn: string;
   name: string;
-  age: string;
+  age: number;  // تغيير النوع إلى number للتوافق مع الإدخال الرقمي
   gender: string;
   admission_date: string;
   admission_time: string;
@@ -19,7 +19,7 @@ const NewPatientAdmission: React.FC = () => {
   const [patientData, setPatientData] = useState<PatientData>({
     mrn: '',
     name: '',
-    age: '',
+    age: 0,
     gender: '',
     admission_date: '',
     admission_time: '',
@@ -30,7 +30,7 @@ const NewPatientAdmission: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setPatientData({ ...patientData, [name]: value });
+    setPatientData({ ...patientData, [name]: name === 'age' ? Number(value) : value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,9 +38,34 @@ const NewPatientAdmission: React.FC = () => {
     setError('');
 
     try {
+      // التحقق من تعبئة جميع الحقول المطلوبة
+      if (
+        !patientData.mrn ||
+        !patientData.name ||
+        !patientData.age ||
+        !patientData.gender ||
+        !patientData.admission_date ||
+        !patientData.admission_time ||
+        !patientData.doctor ||
+        !patientData.specialty
+      ) {
+        setError('All fields are required.');
+        return;
+      }
+
+      // إضافة بيانات المريض إلى Supabase
       const { data, error } = await supabase
         .from('patients')
-        .insert([patientData])
+        .insert([{
+          mrn: patientData.mrn,
+          patient_name: patientData.name,
+          age: patientData.age,
+          gender: patientData.gender,
+          admission_date: patientData.admission_date,
+          admission_time: patientData.admission_time,
+          assigned_doctor: patientData.doctor,
+          specialty: patientData.specialty,
+        }])
         .select();
 
       if (error) throw error;
