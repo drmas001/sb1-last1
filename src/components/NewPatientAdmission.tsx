@@ -4,9 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 interface PatientData {
-  mrn: string;
+  mrn: number;  // تغيير النوع إلى number للتوافق مع إدخال رقمي
   name: string;
-  age: number;  // تغيير النوع إلى number للتوافق مع الإدخال الرقمي
+  age: number;
   gender: string;
   admission_date: string;
   admission_time: string;
@@ -17,7 +17,7 @@ interface PatientData {
 const NewPatientAdmission: React.FC = () => {
   const navigate = useNavigate();
   const [patientData, setPatientData] = useState<PatientData>({
-    mrn: '',
+    mrn: 0,
     name: '',
     age: 0,
     gender: '',
@@ -30,7 +30,7 @@ const NewPatientAdmission: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setPatientData({ ...patientData, [name]: name === 'age' ? Number(value) : value });
+    setPatientData({ ...patientData, [name]: name === 'mrn' || name === 'age' ? Number(value) : value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,6 +53,9 @@ const NewPatientAdmission: React.FC = () => {
         return;
       }
 
+      // تسجيل البيانات للتحقق منها قبل الإرسال
+      console.log('Patient Data:', patientData);
+
       // إضافة بيانات المريض إلى Supabase
       const { data, error } = await supabase
         .from('patients')
@@ -73,9 +76,9 @@ const NewPatientAdmission: React.FC = () => {
       if (data) {
         navigate(`/patient/${data[0].mrn}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       setError('Failed to admit patient. Please try again.');
-      console.error('Error:', error);
+      console.error('Error details:', error.message || error);
     }
   };
 
@@ -92,7 +95,7 @@ const NewPatientAdmission: React.FC = () => {
                   MRN (Medical Record Number)
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   name="mrn"
                   id="mrn"
                   required
